@@ -1,0 +1,40 @@
+@import url(http://fonts.googleapis.com/css?family=Open+Sans);
+
+body {
+  font-family: 'Open Sans', sans-serif;
+}
+
+a {
+  text-decoration: none;
+  color: #0273CF;
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+strong {
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+h1, #subtitle {
+  text-align: center;
+}
+
+#game {
+  display: block;
+  width: 800px;
+  border: 1px solid black;
+  margin: 0 auto;
+  background-color: #F0F0F0;
+}
+
+footer {
+  font-size: 10px;
+  text-align: center;
+
+  #instructions {
+    text-align: left;
+  }
+}
+

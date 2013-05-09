@@ -1,0 +1,19 @@
+!!!5
+%head
+  %title Kill and do not get killed - A game about detecting human behavior.
+  %link{"rel" => "stylesheet", "href" => "style.css", "type" => "text/css"}
+
+  %script{"src" => "https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js", "type" => "text/javascript"}
+  %script{"src" => "app.js", "type" => "text/javascript"}
+  %script{"src" => "game.js", "type" => "text/javascript"}
+  %script{"src" => "renderer.js", "type" => "text/javascript"}
+%body
+  %h1 Kill and do not get killed
+  %p#subtitle A game about detecting human behavior
+
+  %canvas#game{width: 800, height: 600}
+
+  %footer
+
+    %p#instructions <strong>Instructions:</strong> 10 players, a single 800x600 canvas: 8 AI bots, 2 human players. Move with the <strong>WASD</strong> keys. Hide in the crowd, find the other human player, approach him subtly and press <strong>SPACEBAR</strong> to kill him. You get 50 points for killing the human player and you lose 10 points for killing innocent AI bots.
+    %p <a href='http://chrisp.gr'>Christos Porios</a> - inspired by <a href='http://www.patkemp.com/wp-gallery/games/puji.html'>puji</a>
