@@ -21,7 +21,9 @@
 @getPointsFromPlayers = (players) ->
   points = players.slice(0)
   for i in [0...points.length]
-    if i == window.userID
+    if points[i].dead
+      points[i].color = "black"
+    else if i == window.userID
       points[i].color = "#CF0060"
     else
       points[i].color = "#00A0C4"
@@ -41,9 +43,12 @@ $(document).ready ->
     return unless char in ['A', 'W', 'S', 'D', ' ']
     if char == ' '
       window.game.playerAttack(window.userID)
+      console.log "emitting attack!"
+      window.room.emit('attack')
     else
       keyDown = char
       window.setUserDirection(keyToDirection[char])
+      window.room.emit('setDirection', {dir: keyToDirection[char]})
     e.preventDefault(); 
 
   document.onkeyup = (e) ->
@@ -51,6 +56,7 @@ $(document).ready ->
     return unless char == keyDown
     keyDown = null
     window.setUserDirection('X')
+    window.room.emit('setDirection', {dir: 'X'})
     e.preventDefault(); 
     
 
@@ -60,6 +66,15 @@ $(document).ready ->
     prev = Date.now()
     
     window.game.update(delta)
-    window.renderer.render(window.getPointsFromPlayers(window.game.alivePlayers()), window.getCirclesFromExplosions(window.game.explosions))
+    window.renderer.render(window.getPointsFromPlayers(window.game.players), window.getCirclesFromExplosions(window.game.explosions))
   , 1000/60)
   
+  lobby = io.connect('http://localhost:3000')
+  lobby.emit 'join'
+  lobby.on 'start-game', (data) ->
+    console.log "Joined game #{data.gameID}"
+    window.userID = data.playerID
+    window.room = io.connect("http://localhost:3000/game/#{data.gameID}")
+    window.room.on 'state', (state) ->
+      window.game.setState state
+
