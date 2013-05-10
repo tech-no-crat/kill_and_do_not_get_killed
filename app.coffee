@@ -29,52 +29,90 @@
       points[i].color = "#00A0C4"
   points
 
-$(document).ready ->
+handleKeyDown = (e) ->
+  keyToDirection = {A: 'L', D: 'R', W: 'U', S: 'D'}
+  char = window.getCharFromKeypress(e)
+  return unless char in ['A', 'W', 'S', 'D', ' ']
 
-  points = [ {x: 5, y: 120} ]
-  window.game = new window.Game([{x: 200, y:150, direction: 'X'}, {x: 280, y: 60, direction: 'D'}])
-  window.renderer = new window.Renderer(document.getElementById("game").getContext("2d"))
-  window.userID = 0
-
-  keyDown = null
-  document.onkeydown = (e) ->
-    keyToDirection = {A: 'L', D: 'R', W: 'U', S: 'D'}
-    char = window.getCharFromKeypress(e)
-    return unless char in ['A', 'W', 'S', 'D', ' ']
+  if window.status == 'idle'
+    joinGame() if char == ' '
+  else if window.status == 'playing'
     if char == ' '
       window.game.playerAttack(window.userID)
       console.log "emitting attack!"
       window.room.emit('attack')
     else
-      keyDown = char
+      window.keyDown = char
       window.setUserDirection(keyToDirection[char])
       window.room.emit('setDirection', {dir: keyToDirection[char]})
-    e.preventDefault(); 
 
-  document.onkeyup = (e) ->
-    char = window.getCharFromKeypress(e)
-    return unless char == keyDown
-    keyDown = null
-    window.setUserDirection('X')
-    window.room.emit('setDirection', {dir: 'X'})
-    e.preventDefault(); 
-    
+  e.preventDefault(); 
 
-  prev = Date.now()
-  setInterval( ->
-    delta = (Date.now() - prev)/1000
-    prev = Date.now()
-    
-    window.game.update(delta)
-    window.renderer.render(window.getPointsFromPlayers(window.game.players), window.getCirclesFromExplosions(window.game.explosions))
-  , 1000/60)
-  
-  lobby = io.connect('http://localhost:3000')
-  lobby.emit 'join'
-  lobby.on 'start-game', (data) ->
+handleKeyUp = (e) ->
+  char = window.getCharFromKeypress(e)
+  return unless char == window.keyDown
+  window.keyDown = null
+  window.setUserDirection('X')
+  window.room.emit('setDirection', {dir: 'X'})
+  e.preventDefault(); 
+
+connect = ->
+  window.status = 'connecting'
+  $("#status").html("Connecting...")
+  window.lobby = io.connect('http://localhost:3000')
+  window.lobby.on 'connect', ->
+    console.log "Connected!"
+    window.status = 'idle'
+    $("#status").html("Connected, press SPACEBAR to join a game!")
+
+joinGame = ->
+  window.lobby.emit('join')
+  window.status = 'waiting'
+  $("#status").html("Waiting for another player...")
+  window.lobby.on 'start-game', (data) ->
     console.log "Joined game #{data.gameID}"
+    window.status = 'playing'
+    $("#status").html("GO!")
+    setTimeout( ->
+      $("#status").html("")
+    , 500)
+
     window.userID = data.playerID
     window.room = io.connect("http://localhost:3000/game/#{data.gameID}")
     window.room.on 'state', (state) ->
       window.game.setState state
 
+    window.room.on 'gameover', (data) ->
+      window.status = 'idle'
+      window.room = null
+      clearInterval(window.gameLoopRef)
+      if data.reason == 'disconnect'
+        $("#status").html("Your opponent disconnected. Press SPACEBAR to find another game!")
+      else 
+        if data.result == 'draw'
+          $("#status").html("It's a draw! Press SPACEBAR to find another game!")
+        else
+          if data.winner == window.clientID
+            $("#status").html("You won! Press SPACEBAR to find another game!")
+          else
+            $("#status").html("You lost! Press SPACEBAR to find another game!")
+
+    window.prev = Date.now()
+    window.gameLoopRef = setInterval(gameLoop, 1000/60)
+
+gameLoop = ->
+  delta = (Date.now() - window.prev)/1000
+  window.prev = Date.now()
+  
+  window.game.update(delta)
+  window.renderer.render(window.getPointsFromPlayers(window.game.players), window.getCirclesFromExplosions(window.game.explosions))
+
+$(document).ready ->
+  window.game = new window.Game()
+  window.renderer = new window.Renderer(document.getElementById("game").getContext("2d"))
+  window.userID = 0
+  window.keyDown = null
+  document.onkeydown = handleKeyDown 
+  document.onkeyup = handleKeyUp
+
+  connect()

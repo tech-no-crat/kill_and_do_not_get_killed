@@ -21,13 +21,37 @@ h1, #subtitle {
   text-align: center;
 }
 
+#wrapper {
+  position: relative;
+  width: 800px;
+  height: 600px;
+  margin: 0 auto;
+}
+
 #game {
+  position: absolute;
+  top: 0px;
+  left: 0px;
   display: block;
   width: 800px;
   border: 1px solid black;
   margin: 0 auto;
   background-color: #F0F0F0;
+  z-index: 1;
 }
+
+#status {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  font-size: 18px;
+  width: 800px;
+  height: 600px;
+  line-height: 600px;
+  text-align: center;
+  z-index: 3;
+}
+
 
 footer {
   font-size: 10px;

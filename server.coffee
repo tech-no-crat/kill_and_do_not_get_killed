@@ -14,11 +14,20 @@ app.get '/', (req, res) ->
 
 io.set('log level', 1)
 
+clientGameID = {}
 waiting = null
 io.sockets.on 'connection', (client) ->
   address = client.handshake.address
   console.log "Client #{client.id} connected from #{address.address}:#{address.port}"
 
+  client.on 'disconnect', ->
+    gameID = clientGameID[this.id]
+    console.log "Client #{this.id} disconnected"
+    if gameID
+      game = games[gameID]
+      console.log "Ending game #{game.id}"
+      io.of("/game/#{gameID}").emit('gameover', {reason: "disconnect", result: "draw"})
+  
   client.on 'join', ->
     unless waiting
       waiting = client
@@ -30,7 +39,7 @@ io.sockets.on 'connection', (client) ->
 games = {}
 setupGame = (x, y) ->
   gameID = generateGameID()
-  games[gameID] = {playerCount: 0, state: new Game(generateRandomPlayers()), player_ids: [x.id, y.id], status: "waiting", playerID: randomIndicesForPlayers(x, y, 0, 9)}
+  games[gameID] = {id: gameID, playerCount: 0, state: new Game(generateRandomPlayers()), player_ids: [x.id, y.id], status: "waiting", playerID: randomIndicesForPlayers(x, y, 0, 9)}
   game = games[gameID]
 
   x.emit('start-game', {gameID: gameID, playerID: game.playerID[x.id]})
@@ -39,14 +48,17 @@ setupGame = (x, y) ->
   console.log "Starting game #{gameID} between players #{x.id} and #{y.id}"
 
   io.of("/game/#{gameID}").on 'connection', (client) ->
+
     if client.id in game.player_ids
       #TODO: Find a way to ensure that the same player hasn't connected twice
       console.log "Player #{client.id} joined game #{gameID}"
       game.playerCount += 1
       client.gameID = gameID
+      clientGameID[client.id] = gameID
       
       client.on 'attack', -> playerAttack(this)
       client.on 'setDirection', (data) -> playerSetDirection(this, data.dir)
+      
 
       if game.playerCount == 2
         # Start the game (setup the main game loop)
@@ -57,14 +69,11 @@ setupGame = (x, y) ->
         , 1000/60)
 
 playerAttack = (player) ->
-  console.log "Player #{player.id} attacks"
   game = games[player.gameID]
   game.state.playerAttack game.playerID[player.id]
 
 playerSetDirection = (player, direction) ->
-  console.log "Player #{player.id} changes direction to #{direction}"
   game = games[player.gameID]
-  console.log "playerID: #{game.playerID[player.id]}"
   game.state.players[game.playerID[player.id]].direction = direction
 
 
