@@ -57,18 +57,44 @@ handleKeyUp = (e) ->
   e.preventDefault(); 
 
 connect = ->
+  if window.lobby
+    window.lobby.removeAllListeners('connect')
+    window.lobby.removeAllListeners('connect_failed')
+    window.lobby.removeAllListeners('disconnect')
+    window.lobby.removeAllListeners('clientid')
+    window.lobby.disconnect()
+    window.lobby = null
+
   window.status = 'connecting'
   $("#status").html("Connecting...")
-  window.lobby = io.connect('http://localhost:3000')
+  window.lobby = io.connect('http://localhost:3000', { reconnect: false })
+  window.lobby.on 'connect_failed', ->
+    console.log "Connection failed. Trying again in 5 seconds..."
+    setTimeout(connect, 5000)
+
   window.lobby.on 'connect', ->
     console.log "Connected!"
     window.status = 'idle'
     $("#status").html("Connected, press SPACEBAR to join a game!")
 
+  window.lobby.on 'clientid', (data) ->
+    window.clientID = data.id
+
+  window.lobby.on 'disconnect', ->
+    window.status = 'disconnected'
+    if window.room
+      window.room.disconnect()
+      window.room = null
+      clearInterval(window.gameLoopRef) if window.gameLoopRef
+      $("#status").html('Lost connection to the server, attempting to reconnect in 5 seconds...')
+      setTimeout(connect, 5000)
+  window.lobby.on 'disconnected'
+
 joinGame = ->
   window.lobby.emit('join')
   window.status = 'waiting'
   $("#status").html("Waiting for another player...")
+  
   window.lobby.on 'start-game', (data) ->
     console.log "Joined game #{data.gameID}"
     window.status = 'playing'
@@ -78,14 +104,18 @@ joinGame = ->
     , 500)
 
     window.userID = data.playerID
-    window.room = io.connect("http://localhost:3000/game/#{data.gameID}")
+    window.room = io.connect("http://localhost:3000/game/#{data.gameID}", { reconnect: false })
     window.room.on 'state', (state) ->
-      window.game.setState state
+      window.game.setState state if window.status == 'playing'
 
     window.room.on 'gameover', (data) ->
       window.status = 'idle'
+      window.room.disconnect()
       window.room = null
-      clearInterval(window.gameLoopRef)
+      setTimeout( ->
+        clearInterval(window.gameLoopRef)
+      , 1000)
+      p.direction = 'X' for p in window.game.players
       if data.reason == 'disconnect'
         $("#status").html("Your opponent disconnected. Press SPACEBAR to find another game!")
       else 

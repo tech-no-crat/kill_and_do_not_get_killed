@@ -6,34 +6,42 @@ io = require('socket.io').listen(server)
 
 Game = shared.Game
 
+info = {startTime: Date.now(), usersOnline: 0, waiting: 0, gamesPlaying: 0, gamesStarted: 0, gamesFinished: 0}
+
 app.use express.static(__dirname + '/public')
 app.set('log level', 1)
 
 app.get '/', (req, res) ->
   res.sendfile(__dirname + '/index.html')
 
+app.get '/info', (req, res) ->
+  res.send JSON.stringify(info)
+
 io.set('log level', 1)
 
 clientGameID = {}
 waiting = null
 io.sockets.on 'connection', (client) ->
+  info.usersOnline += 1
   address = client.handshake.address
   console.log "Client #{client.id} connected from #{address.address}:#{address.port}"
 
+  client.emit('clientid', {id: client.id})
   client.on 'disconnect', ->
+    info.usersOnline -= 1
     gameID = clientGameID[this.id]
     console.log "Client #{this.id} disconnected"
-    if gameID
-      game = games[gameID]
-      console.log "Ending game #{game.id}"
-      io.of("/game/#{gameID}").emit('gameover', {reason: "disconnect", result: "draw"})
+    endGame(gameID, null, true) if gameID
   
   client.on 'join', ->
     unless waiting
       waiting = client
+      info.waiting = 1
     else
       return if waiting.id == client.id
       setupGame(client, waiting)
+      waiting = null
+      info.waiting = 0
   
 
 games = {}
@@ -63,6 +71,8 @@ setupGame = (x, y) ->
       if game.playerCount == 2
         # Start the game (setup the main game loop)
         console.log "Game #{gameID} starts"
+        info.gamesPlaying += 1
+        info.gamesStarted += 1
         game.last_update = Date.now()
         game.loopRef = setInterval( ->
           gameLoop(gameID)
@@ -84,25 +94,32 @@ gameLoop = (gameID) ->
   game.state.update(delta)
   io.of("/game/#{gameID}").emit('state', game.state.getState())
 
-  player1 = game.state.players[playerID[player_ids[0]]]
-  player2 = game.state.players[playerID[player_ids[1]]]
+  player1 = game.state.players[game.playerID[game.player_ids[0]]]
+  player2 = game.state.players[game.playerID[game.player_ids[1]]]
   if player1.dead or player2.dead
     if not player2.dead
-      endGame(gameID, player_ids[0])
+      endGame(gameID, game.player_ids[1])
     else if not player1.dead
-      endGame(gameID, player_ids[1])
+      endGame(gameID, game.player_ids[0])
     else
       endGame(gameID)
 
-endGame = (gameID, winner) ->
+endGame = (gameID, winner, disconnection) ->
   game = games[gameID]
+  return unless game
   clearInterval(game.loopRef)
   games[gameID] = undefined
+  info.gamesPlaying -= 1
 
-  if winner
-    io.of("/game/#{gameID}").emit('gameover', {reason: "ok", result: "winner", winner: winner})
+  if disconnection
+    data = {reason: "disconnect", result: "draw"}
+  else if winner
+    data = {reason: "ok", result: "winner", winner: winner}
   else
-    io.of("/game/#{gameID}").emit('gameover', {reason: "ok", result: "draw"})
+    data = {reason: "ok", result: "draw"}
+
+  info.gamesFinished += 1 if data.reason == "ok"
+  io.of("/game/#{gameID}").emit('gameover', data)
 
 generateGameID = -> Math.random().toString(36).substring(7)
 generateRandomPlayers = ->
