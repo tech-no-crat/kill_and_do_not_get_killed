@@ -3,10 +3,11 @@ express = require('express')
 app = express()
 server = require('http').createServer(app)
 io = require('socket.io').listen(server)
+usage = require('usage');
 
 Game = shared.Game
 
-info = {startTime: Date.now(), usersOnline: 0, waiting: 0, gamesPlaying: 0, gamesStarted: 0, gamesFinished: 0}
+info = {startTime: Date.now(), usersOnline: 0, waiting: 0, gamesPlaying: 0, gamesStarted: 0, gamesFinished: 0, cpu: 0, memory: 0}
 
 app.use express.static(__dirname + '/public')
 app.set('log level', 1)
@@ -138,5 +139,12 @@ randomIndicesForPlayers = (x, y, min, max) ->
   console.log "ids: #{h[x.id]}, #{h[y.id]}"
 
   return h
+
+setInterval( ->
+  usage.lookup process.pid, {keepHistory: true}, (err, res) ->
+    if res
+      info.cpu = res.cpu
+      info.meomory = res.memory
+, 5000)
 
 server.listen(3000)
