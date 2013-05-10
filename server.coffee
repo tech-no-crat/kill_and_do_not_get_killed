@@ -39,7 +39,7 @@ io.sockets.on 'connection', (client) ->
 games = {}
 setupGame = (x, y) ->
   gameID = generateGameID()
-  games[gameID] = {id: gameID, playerCount: 0, state: new Game(generateRandomPlayers()), player_ids: [x.id, y.id], status: "waiting", playerID: randomIndicesForPlayers(x, y, 0, 9)}
+  games[gameID] = {id: gameID, playerCount: 0, state: new Game(generateRandomPlayers()), player_ids: [x.id, y.id], status: "waiting", playerID: randomIndicesForPlayers(x, y, 0, 9), loopRef: null}
   game = games[gameID]
 
   x.emit('start-game', {gameID: gameID, playerID: game.playerID[x.id]})
@@ -64,7 +64,7 @@ setupGame = (x, y) ->
         # Start the game (setup the main game loop)
         console.log "Game #{gameID} starts"
         game.last_update = Date.now()
-        setInterval( ->
+        game.loopRef = setInterval( ->
           gameLoop(gameID)
         , 1000/60)
 
@@ -76,7 +76,6 @@ playerSetDirection = (player, direction) ->
   game = games[player.gameID]
   game.state.players[game.playerID[player.id]].direction = direction
 
-
 gameLoop = (gameID) ->
   game = games[gameID]
   delta = (Date.now() - game.last_update)/1000
@@ -84,6 +83,26 @@ gameLoop = (gameID) ->
 
   game.state.update(delta)
   io.of("/game/#{gameID}").emit('state', game.state.getState())
+
+  player1 = game.state.players[playerID[player_ids[0]]]
+  player2 = game.state.players[playerID[player_ids[1]]]
+  if player1.dead or player2.dead
+    if not player2.dead
+      endGame(gameID, player_ids[0])
+    else if not player1.dead
+      endGame(gameID, player_ids[1])
+    else
+      endGame(gameID)
+
+endGame = (gameID, winner) ->
+  game = games[gameID]
+  clearInterval(game.loopRef)
+  games[gameID] = undefined
+
+  if winner
+    io.of("/game/#{gameID}").emit('gameover', {reason: "ok", result: "winner", winner: winner})
+  else
+    io.of("/game/#{gameID}").emit('gameover', {reason: "ok", result: "draw"})
 
 generateGameID = -> Math.random().toString(36).substring(7)
 generateRandomPlayers = ->
