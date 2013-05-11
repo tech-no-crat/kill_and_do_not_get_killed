@@ -46,6 +46,22 @@
 
       @explosions.push exp
 
+    willStayInBounds: (id, dir, time) ->
+      dist = time * speed
+
+      x = @players[id].x
+      y = @players[id].y
+      if dir == 'R'
+        return (x + dist + player_size/2) <= width
+      else if dir == 'L'
+        return (x - dist - player_size/2) >= 0
+      else if dir == 'D'
+        return (y + dist + player_size/2) <= height
+      else if dir == 'U'
+        return (y - dist - player_size/2) >= 0
+      else
+        return true
+
   exports.Game = Game
 )(
   if typeof global == "undefined" then window

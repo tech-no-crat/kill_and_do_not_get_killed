@@ -1,7 +1,10 @@
 @import url(http://fonts.googleapis.com/css?family=Open+Sans);
+@import url(http://fonts.googleapis.com/css?family=Racing+Sans+One);
 
 body {
   font-family: 'Open Sans', sans-serif;
+  background-image: url('binding_dark.png');
+  color: #EDEDED;
 }
 
 a {
@@ -17,8 +20,27 @@ strong {
   text-decoration: underline;
 }
 
-h1, #subtitle {
+h1 {
+  margin: 0px;
   text-align: center;
+  text-transform: uppercase;
+  font-family: 'Racing Sans One', cursive;
+  font-size: 100px;
+  text-shadow: 3px 5px 2px rgba(186,0,12, 0.3);
+
+  color: #99000A;
+  .secondline {
+    font-size: 20px;
+    color: #fff;
+    display: block;
+  text-shadow: 2px 2px 2px rgba(255,255,255, 0.3);
+  }
+}
+
+#subtitle {
+  text-align: center;
+  font-size: 14px;
+  font-family: 'Racing Sans One', cursive;
 }
 
 #wrapper {
@@ -36,7 +58,7 @@ h1, #subtitle {
   width: 800px;
   border: 1px solid black;
   margin: 0 auto;
-  background-color: #F0F0F0;
+  background-image: url('inflicted.png');
   z-index: 1;
 }
 

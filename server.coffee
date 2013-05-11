@@ -75,9 +75,43 @@ setupGame = (x, y) ->
         info.gamesPlaying += 1
         info.gamesStarted += 1
         game.last_update = Date.now()
+        for i in [0..9]
+          initAI(gameID, i) unless i == game.playerID[game.player_ids[0]] or i == game.playerID[game.player_ids[1]]
         game.loopRef = setInterval( ->
           gameLoop(gameID)
         , 1000/60)
+
+initAI = (gameID, ind) ->
+  game = games[gameID]
+  return unless game
+  
+  if random(1, 2) == 1
+    moveBot(gameID, ind)
+  else
+    sleepBot(gameID, ind) 
+
+sleepBot = (gameID, ind) ->
+  game = games[gameID]
+  return unless game
+
+  game.state.players[ind].direction = 'X'
+  setTimeout( ->
+    moveBot(gameID, ind)
+  , random(1000, 8000))
+
+moveBot = (gameID, ind) ->
+  game = games[gameID]
+  return unless game
+
+  loop
+    dir = randomDirection()
+    time = random(1000, 8000)
+    break if game.state.willStayInBounds(ind, dir, time/1000)
+
+  game.state.players[ind].direction = dir
+  setTimeout( ->
+    sleepBot(gameID, ind)
+  , time)
 
 playerAttack = (player) ->
   game = games[player.gameID]
@@ -125,11 +159,11 @@ endGame = (gameID, winner, disconnection) ->
 generateGameID = -> Math.random().toString(36).substring(7)
 generateRandomPlayers = ->
   a = []
-  a.push {x: random(10, 790), y: random(10, 590), direction: randomDirection()} for i in [0...10]
+  a.push {x: random(10, 790), y: random(10, 590), direction: 'X'} for i in [0...10]
   return a
 
 random = (min, max) -> Math.floor(Math.random() * (max - min + 1)) + min
-randomDirection = (num) -> {1: 'U', 2: 'D', 3: 'R', 4: 'L'}[random(1, 4)]
+randomDirection = -> {1: 'U', 2: 'D', 3: 'R', 4: 'L'}[random(1, 4)]
 
 randomIndicesForPlayers = (x, y, min, max) ->
   h = {}

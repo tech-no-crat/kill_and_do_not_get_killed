@@ -14,7 +14,7 @@ class @Renderer
       @ctx.fillRect(p.x - (size/2), p.y - (size/2), size, size)
 
     @ctx.lineWidth = 2
-    @ctx.strokeStyle = "FFBB00"
+    @ctx.strokeStyle = "#FF0000"
     for c in circles
       @ctx.beginPath()
       @ctx.arc(c.x, c.y, c.radius, 0, 2 * Math.PI, false)

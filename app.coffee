@@ -24,9 +24,9 @@
     if points[i].dead
       points[i].color = "black"
     else if i == window.userID
-      points[i].color = "#CF0060"
+      points[i].color = "#99000A"
     else
-      points[i].color = "#00A0C4"
+      points[i].color = "#258701"
   points
 
 handleKeyDown = (e) ->
@@ -67,13 +67,12 @@ connect = ->
 
   window.status = 'connecting'
   $("#status").html("Connecting...")
-  window.lobby = io.connect('http://localhost:3000', { reconnect: false })
+  window.lobby = io.connect('/', { reconnect: false })
   window.lobby.on 'connect_failed', ->
     console.log "Connection failed. Trying again in 5 seconds..."
     setTimeout(connect, 5000)
 
   window.lobby.on 'connect', ->
-    console.log "Connected!"
     window.status = 'idle'
     $("#status").html("Connected, press SPACEBAR to join a game!")
 
@@ -85,10 +84,9 @@ connect = ->
     if window.room
       window.room.disconnect()
       window.room = null
-      clearInterval(window.gameLoopRef) if window.gameLoopRef
-      $("#status").html('Lost connection to the server, attempting to reconnect in 5 seconds...')
-      setTimeout(connect, 5000)
-  window.lobby.on 'disconnected'
+    clearInterval(window.gameLoopRef) if window.gameLoopRef
+    $("#status").html('Lost connection to the server, attempting to reconnect in 5 seconds...')
+    setTimeout(connect, 5000)
 
 joinGame = ->
   window.lobby.emit('join')
@@ -104,7 +102,7 @@ joinGame = ->
     , 500)
 
     window.userID = data.playerID
-    window.room = io.connect("http://localhost:3000/game/#{data.gameID}", { reconnect: false })
+    window.room = io.connect("/game/#{data.gameID}", { reconnect: false })
     window.room.on 'state', (state) ->
       window.game.setState state if window.status == 'playing'
 
