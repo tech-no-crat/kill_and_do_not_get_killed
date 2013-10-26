@@ -1,0 +1,69 @@
+@import url(http://fonts.googleapis.com/css?family=Open+Sans);
+@import url(http://fonts.googleapis.com/css?family=Racing+Sans+One);
+body {
+  font-family: 'Open Sans', sans-serif;
+  background-image: url("binding_dark.png");
+  color: #EDEDED; }
+
+a {
+  text-decoration: none;
+  color: #0273CF; }
+  a:hover {
+    text-decoration: underline; }
+
+strong {
+  font-weight: bold;
+  text-decoration: underline; }
+
+h1 {
+  margin: 0px;
+  text-align: center;
+  text-transform: uppercase;
+  font-family: 'Racing Sans One', cursive;
+  font-size: 100px;
+  text-shadow: 3px 5px 2px rgba(186, 0, 12, 0.3);
+  color: #99000A; }
+  h1 .secondline {
+    font-size: 20px;
+    color: #fff;
+    display: block;
+    text-shadow: 2px 2px 2px rgba(255, 255, 255, 0.3); }
+
+#subtitle {
+  text-align: center;
+  font-size: 14px;
+  font-family: 'Racing Sans One', cursive; }
+
+#wrapper {
+  position: relative;
+  width: 800px;
+  height: 600px;
+  margin: 0 auto; }
+
+#game {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  display: block;
+  width: 800px;
+  border: 1px solid black;
+  margin: 0 auto;
+  background-image: url("inflicted.png");
+  z-index: 1; }
+
+#status {
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  font-size: 18px;
+  width: 800px;
+  height: 600px;
+  line-height: 600px;
+  text-align: center;
+  z-index: 3; }
+
+footer {
+  font-size: 10px;
+  text-align: center; }
+  footer #instructions {
+    text-align: left; }

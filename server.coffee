@@ -32,6 +32,7 @@ io.sockets.on 'connection', (client) ->
     info.usersOnline -= 1
     gameID = clientGameID[this.id]
     console.log "Client #{this.id} disconnected"
+    waiting = null if waiting and waiting.id == this.id
     endGame(gameID, null, true) if gameID
   
   client.on 'join', ->
@@ -115,11 +116,15 @@ moveBot = (gameID, ind) ->
 
 playerAttack = (player) ->
   game = games[player.gameID]
+  return unless game
   game.state.playerAttack game.playerID[player.id]
+  gameLoop(player.gameID)
 
 playerSetDirection = (player, direction) ->
   game = games[player.gameID]
+  return unless game
   game.state.players[game.playerID[player.id]].direction = direction
+  gameLoop(player.gameID)
 
 gameLoop = (gameID) ->
   game = games[gameID]
